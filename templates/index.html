@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://kit.fontawesome.com/32d08cbd84.js"></script>
+
+
+    <title>MIA Chat</title>
+    <style>
+        /* Basic reset and font */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            background: url('/static/HomePage.png') no-repeat center center fixed;
+            background-size: cover;
+            height: 100vh;
+        }
+        .chat-container {
+            width: 600px;
+            {#max-width: 100%;#}
+            background-color: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            visibility: hidden;
+        }
+        .chat-header {
+            background-color: #D1190D;
+            color: #fff;
+            padding: 10px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .chat-box {
+    padding: 15px;
+    height: 400px;
+    overflow-y: auto;
+    background-color: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Spacing between messages */
+    border-top: 1px solid #ddd;
+    font-family: Arial, sans-serif;
+}
+
+.chat-message {
+    display: block;
+    margin: 0;
+    padding: 15px; /* Add space inside each message */
+    border-radius: 8px;
+    max-width: 80%; /* Limit message width */
+    font-size: 16px; /* Slightly larger font for readability */
+    line-height: 1.6; /* Add line spacing for multi-line messages */
+    word-wrap: break-word;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.mia-message {
+    background-color: #f3f3f3;
+    color: #333;
+    align-self: flex-start; /* Align to the left */
+}
+
+.user-message {
+    background-color: #D1190D;
+    color: white;
+    align-self: flex-end; /* Align to the right */
+}
+
+.message-bubble {
+    margin: 0;
+}
+
+
+        .chat-input {
+            display: flex;
+            padding: 10px;
+            background-color: #fff;
+            border-top: 1px solid #ddd;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+        }
+        .chat-input button {
+            background-color: #D1190D;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            margin-left: 5px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        .popup-button {
+            position: fixed;
+            top: 40%;
+            right: 0px;
+            background-color: #D1190D; /* Red background */
+            color: #fff;
+            {#font-weight: 800;#}
+            font-size: 20px;
+            border: none;
+            padding: 25px 40px; /* Adjusted padding */
+            padding-right: 100px;
+            {#font-size: 18px;#}
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            clip-path: polygon(8% 0%, 100% 0%, 100% 50%, 100% 100%, 0% 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        a {
+            color: #007bff; /* Blue color */
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        a:hover {
+            text-decoration: none;
+        }
+        .chat-box ol, .chat-box ul {
+            margin-left: 20px; /* Indentation */
+            margin-bottom: 10px; /* Spacing between lists */
+        }
+
+        .chat-box li {
+            margin-bottom: 5px; /* Space between list items */
+            line-height: 1.5;  /* Adjust line height for readability */
+        }
+    </style>
+</head>
+<body>
+    <button class="popup-button" onclick="toggleChat()"><i class="fa-regular fa-message fa-xl"></i>&nbsp;&nbsp; MIA CHAT</button>
+
+    <div class="chat-container" id="chat-container">
+        <div class="chat-header"><i class="fa-regular fa-message fa-xl"></i> &nbsp;Montclair Intelligent Assistant (MIA)</div>
+        <div id="chat-box" class="chat-box"></div>
+        <div class="chat-input">
+            <input type="text" id="query" placeholder="Type your question here" onkeypress="handleKeyPress(event)">
+            <button onclick="sendQuery()"><i class="fa-solid fa-chevron-circle-right fa-xl"></i></button>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+    function toggleChat() {
+        const chatContainer = document.getElementById('chat-container');
+        const popupButton = document.querySelector('.popup-button');
+
+        if (chatContainer.style.visibility === 'hidden' || chatContainer.style.visibility === '') {
+            chatContainer.style.visibility = 'visible';
+            popupButton.style.display = 'none'; // Hide the chat button
+
+            // Add a listener to close the chat when clicking outside
+            document.addEventListener('click', closeChatOnOutsideClick);
+        } else {
+            closeChat();
+        }
+    }
+
+    function closeChat() {
+        const chatContainer = document.getElementById('chat-container');
+        const popupButton = document.querySelector('.popup-button');
+        chatContainer.style.visibility = 'hidden';
+        popupButton.style.display = 'block'; // Show the chat button again
+
+        // Remove the outside click listener to avoid multiple bindings
+        document.removeEventListener('click', closeChatOnOutsideClick);
+    }
+
+    function closeChatOnOutsideClick(event) {
+        const chatContainer = document.getElementById('chat-container');
+        if (!chatContainer.contains(event.target) && event.target.className !== 'popup-button') {
+            closeChat();
+        }
+    }
+
+    function handleKeyPress(event) {
+        if (event.key === "Enter") {
+            sendQuery();
+        }
+    }
+
+    async function sendQuery() {
+        const queryInput = document.getElementById("query");
+        const query = queryInput.value.trim();
+        const chatBox = document.getElementById("chat-box");
+
+        if (query) {
+            addMessage(query, "user-message");
+            queryInput.value = "";
+
+            const loadingMessage = addMessage("Loading...", "mia-message");
+
+            const response = await fetch("/query", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ query })
+            });
+
+            loadingMessage.remove();
+
+            const result = await response.json();
+            addMessage(result.response, "mia-message");
+        }
+    }
+
+    function addMessage(text, className) {
+        const chatBox = document.getElementById("chat-box");
+        const messageElement = document.createElement("div");
+        messageElement.classList.add("chat-message", className);
+
+        // Convert Markdown to HTML
+        const formattedText = marked.parse(text);
+
+        messageElement.innerHTML = formattedText; // Render Markdown as HTML
+        chatBox.appendChild(messageElement);
+
+        // Auto-scroll to the bottom
+        chatBox.scrollTop = chatBox.scrollHeight;
+        return messageElement;
+    }
+
+    function processMarkdownAndURLs(text) {
+        // Convert **text** to <b>text</b>
+        const boldedText = text.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>");
+
+        // Convert URLs into anchor tags
+        const formattedText = boldedText.replace(
+            /((https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(:\d+)?(\/\S*)?)/g,
+            function (url) {
+                const href = url.startsWith("http") ? url : `http://${url}`;
+                return `<a href="${href}" target="_blank" style="color: #007bff; text-decoration: underline;">${url}</a>`;
+            }
+        );
+
+        return formattedText;
+    }
+</script>
+
+</body>
+</html>
